@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2025 WhereAreBugs <wherearebugs@icloud.com>
+# procd-init-script for httpPortReuse
+
+
+USE_PROCD=1
+START=99
+STOP=10
+
+PROG=/usr/bin/httpPortReuse
+
+start_service() {
+    [ -x "$PROG" ] || {
+        echo "Error: $PROG not found or not executable."
+        return 1
+    }
+    procd_open_instance
+    procd_set_param command "$PROG"
+
+    # Automatically restart
+    procd_set_param respawn ${respawn_threshold:-20} ${respawn_timeout:-5} ${respawn_delay:-0}
+
+    procd_set_param stdout 0
+    procd_set_param stderr 0
+
+    procd_set_param nice 10
+    # TODO Use config file below，support uci
+    procd_set_param file /etc/config/httpPortReuse
+
+    procd_close_instance
+}
+
+reload_service() {
+    stop
+    start
+}
