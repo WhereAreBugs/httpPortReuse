@@ -2,7 +2,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=httpPortReuse
-PKG_VERSION:=1.1
+PKG_VERSION:=1.2
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=WhereAreBugs <wherearebugs@icloud.com>
