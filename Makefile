@@ -1,61 +1,58 @@
+#
+# Copyright (C) 2025 WhereAreBugs <wherearebugs@icloud.com>
+#
+# This is free software, licensed under the MIT License.
+#
 
+# 引入 OpenWrt 的标准规则
 include $(TOPDIR)/rules.mk
+# 引入 CMake 的构建辅助工具
+include $(INCLUDE_DIR)/cmake.mk
 
-PKG_NAME:=httpPortReuse
-PKG_VERSION:=1.2
-PKG_RELEASE:=1
-
-PKG_MAINTAINER:=WhereAreBugs <wherearebugs@icloud.com>
-PKG_LICENSE:=MIT
-
-include $(INCLUDE_DIR)/package.mk
-
-define Package/httpPortReuse
+define Package/port-sharer
+  PKG_NAME:=port-sharer
+  PKG_VERSION:=1.4.0
+  PKG_RELEASE:=1
+  PKG_MAINTAINER:=WhereAreBugs <wherearebugs@icloud.com>
+  PKG_LICENSE:=MIT
+  PKG_LICENSE_FILES:=LICENSE
+  PKG_SOURCE_PROTO:=git
+  PKG_SOURCE_URL:=https://github.com/WhereAreBugs/port-sharer.git
+  CMAKE_SOURCE_SUBDIR:=.
+  CMAKE_OPTIONS:=-DCMAKE_BUILD_TYPE=Release -DFLAG_OPENWRT=1
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
-  TITLE:=A Layer-7 traffic dispatcher for port reuse
-  DEPENDS:=+libstdcpp +boost-system +boost-thread
+  TITLE:=A Layer-7 traffic dispatcher for port sharing and reuse
+  URL:=https://github.com/WhereAreBugs/port-sharer.git
+  DEPENDS:=+libstdcpp +boost-system +boost-thread +libuci
 endef
 
-define Package/httpPortReuse/description
-  A high-performance L7 dispatcher that allows reusing a single port
-  for different protocols. It inspects incoming data to identify
-  HTTP/TLS traffic and forwards it to a specific port, while other
-  traffic is sent to another port.
-  Built with C++ and Boost.Asio.
+define Package/port-sharer/description
+  Port Sharer is a high-performance, intelligent Layer-7 traffic dispatcher
+  that allows sharing a single port for multiple protocols.
+  It inspects incoming data to identify protocols like HTTP, TLS (with SNI parsing),
+  SSH, etc., and forwards traffic based on a flexible, UCI-configurable ruleset.
 endef
 
-
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	cp ./src/* $(PKG_BUILD_DIR)/
-endef
-
-define Build/Compile
-	$(TARGET_CXX) $(TARGET_CXXFLAGS) \
-		-o $(PKG_BUILD_DIR)/httpPortReuse \
-		$(PKG_BUILD_DIR)/asio_dispatcher_v2.cpp \
-		$(TARGET_LDFLAGS) -lboost_system -lboost_thread -lpthread
-endef
-
-
-define Package/httpPortReuse/install
+# 定义如何将编译好的文件安装到固件中
+define Package/port-sharer/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/httpPortReuse $(1)/usr/bin/
-
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/port-sharer $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_DATA) ./files/httpPortReuse.init $(1)/etc/init.d/httpPortReuse
-	chmod 0755 $(1)/etc/init.d/httpPortReuse
+	$(INSTALL_BIN) ./files/port-sharer.init $(1)/etc/init.d/port-sharer
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/port-sharer.conf $(1)/etc/config/port_sharer
 endef
 
-define Package/httpPortReuse/postinst
+# 定义安装后执行的脚本
+define Package/port-sharer/postinst
 #!/bin/sh
 if [ -d /etc/rc.d ]; then
-    /etc/init.d/httpPortReuse enable
+    /etc/init.d/port-sharer enable
 fi
 exit 0
 endef
 
-
-$(eval $(call BuildPackage,httpPortReuse))
+# 调用 OpenWrt 的构建宏来生成最终的包定义
+$(eval $(call BuildPackage,port-sharer))
